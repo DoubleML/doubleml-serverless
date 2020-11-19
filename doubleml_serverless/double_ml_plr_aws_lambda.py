@@ -1,5 +1,4 @@
 from doubleml import DoubleMLPLR
-import asyncio
 import json
 import numpy as np
 from sklearn.utils import check_X_y
@@ -102,8 +101,7 @@ class DoubleMLPLRServerless(DoubleMLPLR):
                 this_payload['test_ids'] = test_index.tolist()
                 payloads.append(this_payload)
 
-        loop = asyncio.get_event_loop()
-        results = loop.run_until_complete(self._dml_lambda.invoke(payloads))
+        results = self._dml_lambda.invoke(payloads)
 
         g_hat = np.full((self._dml_data.n_obs, self.n_rep), np.nan)
         m_hat = np.full((self._dml_data.n_obs, self.n_rep), np.nan)

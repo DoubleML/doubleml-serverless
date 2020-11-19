@@ -1,6 +1,6 @@
-import asyncio
 import json
-import aioboto3
+import boto3
+from joblib import Parallel, delayed
 
 
 class DoubleMLLambda:
@@ -9,6 +9,7 @@ class DoubleMLLambda:
                  aws_region):
         self._lambda_function_name = lambda_function_name
         self._aws_region = aws_region
+        self.lambda_client = boto3.client('lambda', region_name=self.aws_region)
 
     @property
     def aws_region(self):
@@ -18,23 +19,21 @@ class DoubleMLLambda:
     def lambda_function_name(self):
         return self._lambda_function_name
 
-    async def invoke(self, payloads):
-        async with aioboto3.client('lambda', region_name=self.aws_region) as lambda_client:
-            tasks = []
-            for this_payload in payloads:
-                tasks.append(self.__invoke_single_lambda(lambda_client, this_payload))
-            results = await asyncio.gather(*tasks)
+    def invoke(self, payloads):
+        n_lambdas = len(payloads)
+        parallel = Parallel(n_jobs=n_lambdas, prefer='threads')
+        results = parallel(delayed(self.__invoke_single_lambda)(payload) for payload in payloads)
         return results
 
-    async def __invoke_single_lambda(self, lambda_client, payload):
+    def __invoke_single_lambda(self, payload):
         print(f'Invoking {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
-        response = await lambda_client.invoke(
+        response = self.lambda_client.invoke(
             FunctionName=self.lambda_function_name,
             InvocationType='RequestResponse',
             LogType='Tail',
             Payload=json.dumps(payload),
         )
-        result = await response['Payload'].read()
+        result = response['Payload'].read()
         print(f'Finished {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
 
         return result
