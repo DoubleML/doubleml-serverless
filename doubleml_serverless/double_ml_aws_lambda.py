@@ -1,6 +1,6 @@
+import asyncio
+import aiobotocore
 import json
-import boto3
-from joblib import Parallel, delayed
 
 
 class DoubleMLLambda:
@@ -9,7 +9,6 @@ class DoubleMLLambda:
                  aws_region):
         self._lambda_function_name = lambda_function_name
         self._aws_region = aws_region
-        self.lambda_client = boto3.client('lambda', region_name=self.aws_region)
 
     @property
     def aws_region(self):
@@ -19,21 +18,26 @@ class DoubleMLLambda:
     def lambda_function_name(self):
         return self._lambda_function_name
 
-    def invoke(self, payloads):
-        n_lambdas = len(payloads)
-        parallel = Parallel(n_jobs=n_lambdas, prefer='threads')
-        results = parallel(delayed(self.__invoke_single_lambda)(payload) for payload in payloads)
+    async def invoke(self, payloads):
+        session = aiobotocore.get_session()
+        tasks = []
+        for this_payload in payloads:
+            tasks.append(self.__invoke_single_lambda(session, this_payload))
+        results = await asyncio.gather(*tasks)
         return results
 
-    def __invoke_single_lambda(self, payload):
-        # print(f'Invoking {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
-        response = self.lambda_client.invoke(
-            FunctionName=self.lambda_function_name,
-            InvocationType='RequestResponse',
-            LogType='Tail',
-            Payload=json.dumps(payload),
-        )
-        result = response['Payload'].read()
-        # print(f'Finished {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
+    async def __invoke_single_lambda(self, session, payload):
+        async with session.create_client('lambda', region_name=self.aws_region) as lambda_client:
+            # logging.info(f'Invoking {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
+            response = await lambda_client.invoke(
+                FunctionName=self.lambda_function_name,
+                InvocationType='RequestResponse',
+                LogType='Tail',
+                Payload=json.dumps(payload),
+            )
+            # logging.info(f'Done {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
+            async with response['Payload'] as stream:
+                result = await stream.read()
+            # logging.info(f'Finished {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
 
         return result
