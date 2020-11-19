@@ -26,7 +26,7 @@ class DoubleMLLambda:
         return results
 
     def __invoke_single_lambda(self, payload):
-        print(f'Invoking {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
+        # print(f'Invoking {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
         response = self.lambda_client.invoke(
             FunctionName=self.lambda_function_name,
             InvocationType='RequestResponse',
@@ -34,6 +34,6 @@ class DoubleMLLambda:
             Payload=json.dumps(payload),
         )
         result = response['Payload'].read()
-        print(f'Finished {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
+        # print(f'Finished {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
 
         return result
