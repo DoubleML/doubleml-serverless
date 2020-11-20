@@ -37,7 +37,18 @@ class DoubleMLPLRServerless(DoubleMLPLR, DoubleMLLambda):
                                 aws_region)
 
     # this method overwrites DoubleML.fit() to implement the fit via aws lambda
-    def fit(self, n_jobs_cv=None, keep_scores=True):
+    def fit(self, n_jobs_cv='n_folds * n_rep', keep_scores=True):
+        """
+        Parameters
+        ----------
+        n_jobs_cv : str
+
+        keep_scores : bool
+        """
+
+        if (not isinstance(n_jobs_cv, str)) | (n_jobs_cv not in ['n_folds * n_rep', 'n_rep']):
+            raise ValueError('n_jobs_cv must be "n_folds * n_rep" or "n_rep"'
+                             f' got {str(n_jobs_cv)}')
 
         assert self._dml_data.n_treat == 1
         self._i_treat = 0
@@ -72,12 +83,14 @@ class DoubleMLPLRServerless(DoubleMLPLR, DoubleMLLambda):
                         self._dml_data.d_cols[0], self._dml_data.x_cols)
 
         payloads = _attach_smpls([payload_ml_g, payload_ml_m],
-                                 smpls, self._dml_data.n_obs)
+                                 smpls, self._dml_data.n_obs,
+                                 n_jobs_cv)
 
         results = self.invoke_lambdas(payloads)
 
         preds = _extract_preds(results, smpls, self.params_names,
-                               self._dml_data.n_obs, self.n_rep)
+                               self._dml_data.n_obs, self.n_rep,
+                               n_jobs_cv)
 
         psi_a = np.full((self._dml_data.n_obs, self.n_rep), np.nan)
         psi_b = np.full((self._dml_data.n_obs, self.n_rep), np.nan)
