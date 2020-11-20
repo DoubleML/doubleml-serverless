@@ -20,27 +20,37 @@ def _attach_learner(payload, learner_name, learner, outcome_var, covars):
     return
 
 
-def _attach_smpls(learner_payloads, smpls, n_obs, scaling):
+def _attach_smpls(learner_payloads, smpls, n_obs, scaling, send_train_ids=False):
     payloads = list()
     # note that the order of the loops is not optimal but aligned with the DoubleML package to allow reproducibility
     for i_rep, this_smpl in enumerate(smpls):
         for payload_learner in learner_payloads:
             if scaling == 'n_folds * n_rep':
                 for i_fold, (train_index, test_index) in enumerate(this_smpl):
-                    _check_inds_are_partition(np.concatenate((train_index, test_index)), n_obs)
                     this_payload = payload_learner.copy()
                     this_payload['scaling'] = scaling
                     this_payload['i_rep'] = i_rep
                     this_payload['i_fold'] = i_fold
+                    if send_train_ids:
+                        this_payload['train_ids'] = train_index.tolist()
+                    else:
+                        assert _check_inds_are_partition(np.concatenate((train_index, test_index)), n_obs)
                     this_payload['test_ids'] = test_index.tolist()
 
                     payloads.append(this_payload)
             else:
                 assert scaling == 'n_rep'
-                test_ids = [test_index.tolist() for (_, test_index) in this_smpl]
                 this_payload = payload_learner.copy()
                 this_payload['scaling'] = scaling
                 this_payload['i_rep'] = i_rep
+                test_ids = [test_index.tolist() for (_, test_index) in this_smpl]
+                if send_train_ids:
+                    train_ids = [train_index.tolist() for (train_index, _) in this_smpl]
+                    this_payload['train_ids'] = train_ids
+                else:
+                    smpls_are_partitions = [_check_inds_are_partition(np.concatenate((train_index, test_index)), n_obs)
+                                            for (train_index, test_index) in this_smpl]
+                    assert all(smpls_are_partitions)
                 this_payload['test_ids'] = test_ids
 
                 payloads.append(this_payload)
