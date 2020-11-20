@@ -32,7 +32,7 @@ def lambda_cv_predict(event, context):
         df = pd.read_csv(csv_file)
     elif data_backend == 'json':
         df_json = event.get('data')
-        df = pd.read_json(df_json)
+        df = pd.read_json(df_json, orient='columns')
     else:
         raise NotImplementedError()
 
