@@ -3,16 +3,14 @@ import pandas as pd
 import pytest
 import math
 
-from sklearn.model_selection import KFold
 from sklearn.base import clone
-
 from sklearn.linear_model import LinearRegression, Lasso
 from sklearn.ensemble import RandomForestRegressor
 
 import doubleml as dml
 import doubleml_serverless as dml_lambda
 
-from doubleml.tests.helper_general import get_n_datasets
+from doubleml_serverless.tests.helper_general import get_n_datasets
 
 # number of datasets per dgp
 n_datasets = get_n_datasets()
