@@ -53,7 +53,7 @@ def dml_plr_fixture(generate_data_plr, idx, learner, score, dml_procedure):
     # collect data
     data = generate_data_plr[idx]
 
-    # to simulate lambda calls we have to dumps to json, so simulate it here to prevent differences due to inaccuracies
+    # to simulate lambda calls we have dumps to json, so we simulate it here to prevent differences due to inaccuracies
     data = pd.read_json(data.to_json(orient='columns'), orient='columns')
 
     x_cols = data.columns[data.columns.str.startswith('X')].tolist()
@@ -64,11 +64,12 @@ def dml_plr_fixture(generate_data_plr, idx, learner, score, dml_procedure):
 
     np.random.seed(3141)
     dml_data_json = dml_lambda.DoubleMLDataJson(data, 'y', ['d'], x_cols)
-    dml_plr_lambda = dml.DoubleMLPLR(dml_data_json,
-                                     ml_g, ml_m,
-                                     n_folds,
-                                     score=score,
-                                     dml_procedure=dml_procedure)
+    dml_plr_lambda = dml_lambda.DoubleMLPLRServerless('local', 'local',
+                                                      dml_data_json,
+                                                      ml_g, ml_m,
+                                                      n_folds,
+                                                      score=score,
+                                                      dml_procedure=dml_procedure)
 
     dml_plr_lambda.fit()
 
@@ -121,5 +122,87 @@ def test_dml_plr_boot(dml_plr_fixture):
                            rtol=1e-9, atol=1e-4)
         assert np.allclose(dml_plr_fixture['boot_t_stat' + bootstrap],
                            dml_plr_fixture['boot_t_stat' + bootstrap + '_lambda'],
+                           rtol=1e-9, atol=1e-4)
+
+
+@pytest.fixture(scope="module")
+def dml_plr_scaling_fixture(generate_data_plr, idx, learner, score, dml_procedure):
+    boot_methods = ['normal']
+    n_folds = 4
+    n_rep_boot = 502
+
+    # collect data
+    data = generate_data_plr[idx]
+
+    # to simulate lambda calls we have dumps to json, so we simulate it here to prevent differences due to inaccuracies
+    data = pd.read_json(data.to_json(orient='columns'), orient='columns')
+
+    x_cols = data.columns[data.columns.str.startswith('X')].tolist()
+
+    # Set machine learning methods for m & g
+    ml_g = clone(learner)
+    ml_m = clone(learner)
+
+    dml_data_json = dml_lambda.DoubleMLDataJson(data, 'y', ['d'], x_cols)
+
+    np.random.seed(3141)
+    dml_plr_folds = dml_lambda.DoubleMLPLRServerless('local', 'local',
+                                                     dml_data_json,
+                                                     ml_g, ml_m,
+                                                     n_folds,
+                                                     score=score,
+                                                     dml_procedure=dml_procedure)
+
+    dml_plr_folds.fit('n_folds * n_rep')
+
+    np.random.seed(3141)
+    dml_plr_reps = dml_lambda.DoubleMLPLRServerless('local', 'local',
+                                                    dml_data_json,
+                                                    ml_g, ml_m,
+                                                    n_folds,
+                                                    score=score,
+                                                    dml_procedure=dml_procedure)
+
+    dml_plr_reps.fit('n_rep')
+
+    res_dict = {'coef_folds': dml_plr_folds.coef,
+                'coef_reps': dml_plr_reps.coef,
+                'se_folds': dml_plr_folds.se,
+                'se_reps': dml_plr_reps.se,
+                'boot_methods': boot_methods}
+
+    for bootstrap in boot_methods:
+        np.random.seed(3141)
+        dml_plr_folds.bootstrap(method=bootstrap, n_rep_boot=n_rep_boot)
+        np.random.seed(3141)
+        dml_plr_reps.bootstrap(method=bootstrap, n_rep_boot=n_rep_boot)
+
+        res_dict['boot_coef' + bootstrap + '_folds'] = dml_plr_folds.boot_coef
+        res_dict['boot_t_stat' + bootstrap + '_folds'] = dml_plr_folds.boot_t_stat
+        res_dict['boot_coef' + bootstrap + '_reps'] = dml_plr_reps.boot_coef
+        res_dict['boot_t_stat' + bootstrap + '_reps'] = dml_plr_reps.boot_t_stat
+
+    return res_dict
+
+
+def test_dml_plr_scaling_coef(dml_plr_scaling_fixture):
+    assert math.isclose(dml_plr_scaling_fixture['coef_folds'],
+                        dml_plr_scaling_fixture['coef_reps'],
+                        rel_tol=1e-9, abs_tol=1e-4)
+
+
+def test_dml_plr_scaling_se(dml_plr_scaling_fixture):
+    assert math.isclose(dml_plr_scaling_fixture['se_folds'],
+                        dml_plr_scaling_fixture['se_reps'],
+                        rel_tol=1e-9, abs_tol=1e-4)
+
+
+def test_dml_plr_scaling_boot(dml_plr_scaling_fixture):
+    for bootstrap in dml_plr_scaling_fixture['boot_methods']:
+        assert np.allclose(dml_plr_scaling_fixture['boot_coef' + bootstrap + '_folds'],
+                           dml_plr_scaling_fixture['boot_coef' + bootstrap + '_reps'],
+                           rtol=1e-9, atol=1e-4)
+        assert np.allclose(dml_plr_scaling_fixture['boot_t_stat' + bootstrap + '_folds'],
+                           dml_plr_scaling_fixture['boot_t_stat' + bootstrap + '_reps'],
                            rtol=1e-9, atol=1e-4)
 
