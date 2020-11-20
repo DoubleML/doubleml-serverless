@@ -90,8 +90,11 @@ class DoubleMLPLIVServerless(DoubleMLPLIV, DoubleMLLambda):
                         self._dml_data.d_cols[0], self._dml_data.x_cols)
 
         payloads = _attach_smpls([payload_ml_g, payload_ml_m, payload_ml_r],
-                                 smpls, self._dml_data.n_obs,
-                                 n_jobs_cv)
+                                 [smpls, smpls, smpls],
+                                 self.n_rep,
+                                 self._dml_data.n_obs,
+                                 n_jobs_cv,
+                                 [False, False, False])
 
         results = self.invoke_lambdas(payloads)
 
@@ -108,6 +111,6 @@ class DoubleMLPLIVServerless(DoubleMLPLIV, DoubleMLLambda):
                                                                     preds['ml_g'][:, i_rep],
                                                                     preds['ml_m'][:, i_rep],
                                                                     preds['ml_r'][:, i_rep],
-                                                                    smpls)
+                                                                    smpls[i_rep])
 
         return psi_a, psi_b

@@ -62,7 +62,7 @@ def generate_data_irm(request):
     # generating data
     datasets = []
     for i in range(n_datasets):
-        data = make_irm_data(N, p, theta, return_type='array')
+        data = make_irm_data(N, p, theta, return_type=pd.DataFrame)
         datasets.append(data)
 
     return datasets

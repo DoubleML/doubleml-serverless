@@ -1,12 +1,14 @@
-from doubleml import DoubleMLPLR
+from doubleml import DoubleMLIRM
 import numpy as np
 from sklearn.utils import check_X_y
+
+from ._helper import _get_cond_smpls
 
 from .double_ml_aws_lambda import DoubleMLLambda
 from ._helper import _attach_learner, _attach_smpls, _extract_preds
 
 
-class DoubleMLPLRServerless(DoubleMLPLR, DoubleMLLambda):
+class DoubleMLIRMServerless(DoubleMLIRM, DoubleMLLambda):
     def __init__(self,
                  lambda_function_name,
                  aws_region,
@@ -15,11 +17,13 @@ class DoubleMLPLRServerless(DoubleMLPLR, DoubleMLLambda):
                  ml_m,
                  n_folds=5,
                  n_rep=1,
-                 score='partialling out',
+                 score='ATE',
                  dml_procedure='dml2',
+                 trimming_rule='truncate',
+                 trimming_threshold=1e-12,
                  draw_sample_splitting=True,
                  apply_cross_fitting=True):
-        DoubleMLPLR.__init__(self,
+        DoubleMLIRM.__init__(self,
                              obj_dml_data,
                              ml_g,
                              ml_m,
@@ -27,6 +31,8 @@ class DoubleMLPLRServerless(DoubleMLPLR, DoubleMLLambda):
                              n_rep,
                              score,
                              dml_procedure,
+                             trimming_rule,
+                             trimming_threshold,
                              draw_sample_splitting,
                              apply_cross_fitting)
         DoubleMLLambda.__init__(self,
@@ -65,26 +71,41 @@ class DoubleMLPLRServerless(DoubleMLPLR, DoubleMLLambda):
     def _ml_nuisance_and_score_elements(self, smpls, n_jobs_cv):
         x, y = check_X_y(self._dml_data.x, self._dml_data.y)
         x, d = check_X_y(x, self._dml_data.d)
+        # get train indices for d == 0 and d == 1
+        smpls_d0, smpls_d1 = _get_cond_smpls(smpls, d)
 
         payload = self._dml_data.get_payload()
 
-        payload_ml_g = payload.copy()
+        payload_ml_g0 = payload.copy()
+        payload_ml_g1 = payload.copy()
         payload_ml_m = payload.copy()
 
-        _attach_learner(payload_ml_g,
-                        'ml_g', self.learner['ml_g'],
+        _attach_learner(payload_ml_g0,
+                        'ml_g0', self.learner['ml_g'],
                         self._dml_data.y_col, self._dml_data.x_cols)
+
+        if (self.score == 'ATE') | callable(self.score):
+            _attach_learner(payload_ml_g1,
+                            'ml_g1', self.learner['ml_g'],
+                            self._dml_data.y_col, self._dml_data.x_cols)
 
         _attach_learner(payload_ml_m,
                         'ml_m', self.learner['ml_m'],
-                        self._dml_data.d_cols[0], self._dml_data.x_cols)
+                        self._dml_data.d_cols[0], self._dml_data.x_cols,
+                        method='predict_proba')
+        if (self.score == 'ATE') | callable(self.score):
+            all_payloads = [payload_ml_g0, payload_ml_g1, payload_ml_m]
+            all_smpls = [smpls_d0, smpls_d1, smpls]
+        else:
+            all_payloads = [payload_ml_g0, payload_ml_m]
+            all_smpls = [smpls_d0, smpls]
 
-        payloads = _attach_smpls([payload_ml_g, payload_ml_m],
-                                 [smpls, smpls],
+        payloads = _attach_smpls(all_payloads,
+                                 all_smpls,
                                  self.n_rep,
                                  self._dml_data.n_obs,
                                  n_jobs_cv,
-                                 [False, False])
+                                 [True, True, False])
 
         results = self.invoke_lambdas(payloads)
 
@@ -98,7 +119,8 @@ class DoubleMLPLRServerless(DoubleMLPLR, DoubleMLLambda):
         for i_rep in range(self.n_rep):
             # compute score elements
             psi_a[:, i_rep], psi_b[:, i_rep] = self._score_elements(y, d,
-                                                                    preds['ml_g'][:, i_rep],
+                                                                    preds['ml_g0'][:, i_rep],
+                                                                    preds['ml_g1'][:, i_rep],
                                                                     preds['ml_m'][:, i_rep],
                                                                     smpls[i_rep])
 

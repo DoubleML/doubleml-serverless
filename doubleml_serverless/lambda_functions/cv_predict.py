@@ -11,9 +11,11 @@ def lambda_cv_predict(event, context):
     # Get variables from event
     data_backend = event.get('data_backend')
     lrn_repr = event.get('learner_repr')
+    pred_method = event.get('pred_method')
     y_col = event.get('y_col')
     x_cols = event.get('x_cols')
     test_ids = event.get('test_ids')
+    train_ids = event.get('train_ids')
 
     learner_name = event.get('learner')
     scaling = event.get('scaling')
@@ -43,15 +45,36 @@ def lambda_cv_predict(event, context):
 
     learner = eval(lrn_repr)
     if scaling == 'n_folds * n_rep':
-        learner.fit(np.delete(x, test_ids, axis=0), np.delete(y, test_ids))
-        preds = learner.predict(x[test_ids])
+        if train_ids is None:
+            learner.fit(np.delete(x, test_ids, axis=0), np.delete(y, test_ids))
+        else:
+            learner.fit(x[train_ids], y[train_ids])
+        if pred_method == 'predict':
+            preds = learner.predict(x[test_ids])
+        else:
+            assert pred_method == 'predict_proba'
+            preds = learner.predict_proba(x[test_ids])[:, 1]
+
     else:
         assert scaling == 'n_rep'
         n_obs = x.shape[0]
         preds = np.full(n_obs, np.nan)
-        for test_index in test_ids:
-            learner.fit(np.delete(x, test_index, axis=0), np.delete(y, test_index))
-            preds[test_index] = learner.predict(x[test_index])
+        if train_ids is None:
+            for test_index in test_ids:
+                learner.fit(np.delete(x, test_index, axis=0), np.delete(y, test_index))
+                if pred_method == 'predict':
+                    preds[test_index] = learner.predict(x[test_index])
+                else:
+                    assert pred_method == 'predict_proba'
+                    preds[test_index] = learner.predict_proba(x[test_index])[:, 1]
+        else:
+            for (train_index, test_index) in zip(train_ids, test_ids):
+                learner.fit(x[train_index], y[train_index])
+                if pred_method == 'predict':
+                    preds[test_index] = learner.predict(x[test_index])
+                else:
+                    assert pred_method == 'predict_proba'
+                    preds[test_index] = learner.predict_proba(x[test_index])[:, 1]
 
     return {
         'statusCode': 200,

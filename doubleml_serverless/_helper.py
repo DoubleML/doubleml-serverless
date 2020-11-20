@@ -12,26 +12,37 @@ def _check_inds_are_partition(inds, n_obs):
     return True
 
 
-def _attach_learner(payload, learner_name, learner, outcome_var, covars):
+def _get_cond_smpls(smpls, bin_var):
+    smpls_0 = list()
+    smpls_1 = list()
+    for this_smpl in smpls:
+        smpls_0.append([(np.intersect1d(np.where(bin_var == 0)[0], train), test) for train, test in this_smpl])
+        smpls_1.append([(np.intersect1d(np.where(bin_var == 1)[0], train), test) for train, test in this_smpl])
+    return smpls_0, smpls_1
+
+
+def _attach_learner(payload, learner_name, learner, outcome_var, covars, method='predict'):
     payload['learner'] = learner_name
     payload['learner_repr'] = learner.__repr__()
     payload['y_col'] = outcome_var
     payload['x_cols'] = covars
+    payload['pred_method'] = method
     return
 
 
-def _attach_smpls(learner_payloads, smpls, n_obs, scaling, send_train_ids=False):
+def _attach_smpls(learner_payloads, smpls, n_rep, n_obs, scaling, send_train_ids):
     payloads = list()
     # note that the order of the loops is not optimal but aligned with the DoubleML package to allow reproducibility
-    for i_rep, this_smpl in enumerate(smpls):
-        for payload_learner in learner_payloads:
+    for i_rep in range(n_rep):
+        for i_learner, payload_learner in enumerate(learner_payloads):
+            this_smpl = smpls[i_learner][i_rep]
             if scaling == 'n_folds * n_rep':
                 for i_fold, (train_index, test_index) in enumerate(this_smpl):
                     this_payload = payload_learner.copy()
                     this_payload['scaling'] = scaling
                     this_payload['i_rep'] = i_rep
                     this_payload['i_fold'] = i_fold
-                    if send_train_ids:
+                    if send_train_ids[i_learner]:
                         this_payload['train_ids'] = train_index.tolist()
                     else:
                         assert _check_inds_are_partition(np.concatenate((train_index, test_index)), n_obs)
@@ -44,7 +55,7 @@ def _attach_smpls(learner_payloads, smpls, n_obs, scaling, send_train_ids=False)
                 this_payload['scaling'] = scaling
                 this_payload['i_rep'] = i_rep
                 test_ids = [test_index.tolist() for (_, test_index) in this_smpl]
-                if send_train_ids:
+                if send_train_ids[i_learner]:
                     train_ids = [train_index.tolist() for (train_index, _) in this_smpl]
                     this_payload['train_ids'] = train_ids
                 else:
