@@ -1,5 +1,6 @@
 import json
 import boto3
+import os
 
 import numpy as np
 import pandas as pd
@@ -29,9 +30,11 @@ def lambda_cv_predict(event, context):
         s3_client = boto3.client('s3')
         response = s3_client.get_object(Bucket=bucket,
                                         Key=key)
-        csv_file = response["Body"]
+        file = response["Body"]
+        file_ending = os.path.splitext(key)[1]
+        assert file_ending in ['.csv']
         # load csv as a pd.DataFrame
-        df = pd.read_csv(csv_file)
+        df = pd.read_csv(file)
     elif data_backend == 'json':
         df_json = event.get('data')
         df = pd.read_json(df_json, orient='columns')
