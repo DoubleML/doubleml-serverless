@@ -33,7 +33,7 @@ def _attach_learner(payload, learner_name, learner, outcome_var, covars, method=
     return
 
 
-def _attach_smpls(learner_payloads, smpls, n_rep, n_obs, scaling, send_train_ids):
+def _attach_smpls(learner_payloads, smpls, n_folds, n_rep, n_obs, scaling, send_train_ids, seed):
     payloads = list()
     # note that the order of the loops is not optimal but aligned with the DoubleML package to allow reproducibility
     for i_rep in range(n_rep):
@@ -45,6 +45,8 @@ def _attach_smpls(learner_payloads, smpls, n_rep, n_obs, scaling, send_train_ids
                     this_payload['scaling'] = scaling
                     this_payload['i_rep'] = i_rep
                     this_payload['i_fold'] = i_fold
+                    this_payload['seed'] = seed
+                    this_payload['seed_jumps'] = i_learner * n_rep * n_folds + i_rep * n_folds + i_fold
                     if send_train_ids[i_learner]:
                         this_payload['train_ids'] = train_index.tolist()
                     else:
@@ -57,6 +59,8 @@ def _attach_smpls(learner_payloads, smpls, n_rep, n_obs, scaling, send_train_ids
                 this_payload = payload_learner.copy()
                 this_payload['scaling'] = scaling
                 this_payload['i_rep'] = i_rep
+                this_payload['seed'] = seed
+                this_payload['seed_jumps'] = i_learner * n_rep * n_folds + i_rep * n_folds
                 test_ids = [test_index.tolist() for (_, test_index) in this_smpl]
                 if send_train_ids[i_learner]:
                     train_ids = [train_index.tolist() for (train_index, _) in this_smpl]
@@ -121,5 +125,5 @@ def _extract_lambda_metrics(results):
         this_df.rename(columns={'REPORT RequestId': 'RequestId'}, inplace=True)
         df = df.append(this_df)
     df['Billed Duration GBSeconds'] = df['Billed Duration'] / 1000 * df['Memory Size'] / 1000
-
+    df.reset_index(inplace=True)
     return df

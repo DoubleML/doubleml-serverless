@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.utils import check_X_y
 
 from .double_ml_aws_lambda import DoubleMLLambda
-from ._helper import _attach_learner, _attach_smpls, _extract_preds
+from ._helper import _attach_learner, _attach_smpls
 
 
 class DoubleMLPLIVServerless(DoubleMLPLIV, DoubleMLLambda):
@@ -36,11 +36,13 @@ class DoubleMLPLIVServerless(DoubleMLPLIV, DoubleMLLambda):
                                 aws_region)
 
     # this method overwrites DoubleML.fit() to implement the fit via aws lambda
-    def fit(self, n_jobs_cv='n_folds * n_rep', keep_scores=True):
+    def fit(self, n_jobs_cv='n_folds * n_rep', seed=None, keep_scores=True):
         """
         Parameters
         ----------
         n_jobs_cv : str
+
+        seed : int or None
 
         keep_scores : bool
         """
@@ -53,7 +55,7 @@ class DoubleMLPLIVServerless(DoubleMLPLIV, DoubleMLLambda):
         self._i_treat = 0
 
         # ml estimation of nuisance models and computation of score elements
-        psi_a, psi_b = self._ml_nuisance_and_score_elements(self.smpls, n_jobs_cv)
+        psi_a, psi_b = self._ml_nuisance_and_score_elements(self.smpls, n_jobs_cv, seed)
         self._psi_a[:, :, self._i_treat] = psi_a
         self._psi_b[:, :, self._i_treat] = psi_b
 
@@ -64,7 +66,7 @@ class DoubleMLPLIVServerless(DoubleMLPLIV, DoubleMLLambda):
 
         return self
 
-    def _ml_nuisance_and_score_elements(self, smpls, n_jobs_cv):
+    def _ml_nuisance_and_score_elements(self, smpls, n_jobs_cv, seed):
         x, y = check_X_y(self._dml_data.x, self._dml_data.y)
         x, d = check_X_y(x, self._dml_data.d)
         assert self._dml_data.n_instr == 1
@@ -91,16 +93,16 @@ class DoubleMLPLIVServerless(DoubleMLPLIV, DoubleMLLambda):
 
         payloads = _attach_smpls([payload_ml_g, payload_ml_m, payload_ml_r],
                                  [smpls, smpls, smpls],
+                                 self.n_folds,
                                  self.n_rep,
                                  self._dml_data.n_obs,
                                  n_jobs_cv,
-                                 [False, False, False])
+                                 [False, False, False],
+                                 seed)
 
-        results = self.invoke_lambdas(payloads)
-
-        preds = _extract_preds(results, smpls, self.params_names,
-                               self._dml_data.n_obs, self.n_rep,
-                               n_jobs_cv)
+        preds = self.invoke_lambdas(payloads, smpls, self.params_names,
+                                    self._dml_data.n_obs, self.n_rep,
+                                    n_jobs_cv)
 
         psi_a = np.full((self._dml_data.n_obs, self.n_rep), np.nan)
         psi_b = np.full((self._dml_data.n_obs, self.n_rep), np.nan)

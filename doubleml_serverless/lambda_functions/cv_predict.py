@@ -3,6 +3,7 @@ import boto3
 import os
 
 import numpy as np
+from numpy.random import MT19937, RandomState
 import pandas as pd
 from sklearn.linear_model import *
 from sklearn.ensemble import *
@@ -22,6 +23,8 @@ def lambda_cv_predict(event, context):
     scaling = event.get('scaling')
     i_rep = event.get('i_rep')
     i_fold = event.get('i_fold')
+    seed = event.get('seed')
+    seed_jumps = event.get('seed_jumps')
 
     if data_backend == 's3':
         # s3 data backend
@@ -48,6 +51,8 @@ def lambda_cv_predict(event, context):
 
     learner = eval(lrn_repr)
     if scaling == 'n_folds * n_rep':
+        if seed is not None:
+            learner.set_params(random_state=RandomState(MT19937(seed).jumped(seed_jumps)))
         if train_ids is None:
             learner.fit(np.delete(x, test_ids, axis=0), np.delete(y, test_ids))
         else:
@@ -63,7 +68,9 @@ def lambda_cv_predict(event, context):
         n_obs = x.shape[0]
         preds = np.full(n_obs, np.nan)
         if train_ids is None:
-            for test_index in test_ids:
+            for idx, test_index in enumerate(test_ids):
+                if seed is not None:
+                    learner.set_params(random_state=RandomState(MT19937(seed).jumped(seed_jumps + idx)))
                 learner.fit(np.delete(x, test_index, axis=0), np.delete(y, test_index))
                 if pred_method == 'predict':
                     preds[test_index] = learner.predict(x[test_index])
@@ -71,7 +78,9 @@ def lambda_cv_predict(event, context):
                     assert pred_method == 'predict_proba'
                     preds[test_index] = learner.predict_proba(x[test_index])[:, 1]
         else:
-            for (train_index, test_index) in zip(train_ids, test_ids):
+            for idx, (train_index, test_index) in enumerate(zip(train_ids, test_ids)):
+                if seed is not None:
+                    learner.set_params(random_state=RandomState(MT19937(seed).jumped(seed_jumps + idx)))
                 learner.fit(x[train_index], y[train_index])
                 if pred_method == 'predict':
                     preds[test_index] = learner.predict(x[test_index])

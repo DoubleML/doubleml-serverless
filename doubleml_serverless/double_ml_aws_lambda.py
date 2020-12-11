@@ -4,7 +4,7 @@ import aiobotocore
 import json
 
 from .lambda_functions.cv_predict import lambda_cv_predict
-from ._helper import _extract_lambda_metrics
+from ._helper import _extract_preds, _extract_lambda_metrics
 
 
 class DoubleMLLambda:
@@ -13,7 +13,8 @@ class DoubleMLLambda:
                  aws_region):
         self._lambda_function_name = lambda_function_name
         self._aws_region = aws_region
-        self.aws_lambda_detailed_metrics = pd.DataFrame(columns=['RequestId', 'Duration', 'Billed Duration',
+        self.aws_lambda_detailed_metrics = pd.DataFrame(columns=['learner', 'i_rep', 'i_fold',
+                                                                 'RequestId', 'Duration', 'Billed Duration',
                                                                  'Memory Size', 'Max Memory Used', 'Init Duration',
                                                                  'Billed Duration GBSeconds'])
 
@@ -32,6 +33,7 @@ class DoubleMLLambda:
         metrics['Requests'] = df.shape[0]
         metrics['Total Billed Duration (GBSeconds)'] = df['Billed Duration GBSeconds'].sum()
         metrics['Total Duration (Seconds)'] = df['Duration'].sum() / 1000
+        metrics['Avg Duration (Seconds)'] = df['Duration'].mean() / 1000
         metrics['Total Billed Duration (Seconds)'] = df['Billed Duration'].sum() / 1000
         if metrics['Requests'] > 0:
             metrics['Memory Size (MB; last request)'] = df['Memory Size'].iloc[-1]
@@ -39,7 +41,7 @@ class DoubleMLLambda:
         metrics['Avg Max Memory Used (MB)'] = df['Max Memory Used'].mean()
         return metrics
 
-    def invoke_lambdas(self, payloads):
+    def invoke_lambdas(self, payloads, smpls, params_names, n_obs, n_rep, n_jobs_cv):
         if self.lambda_function_name == 'local':
             assert self.aws_region == 'local'
             # this callable option is just for local testing
@@ -48,15 +50,19 @@ class DoubleMLLambda:
             for this_payload in payloads:
                 xx = json.dumps(this_payload)
                 yy = json.loads(xx)
-                this_res = lambda_cv_predict(yy, context)
-                results.append(json.dumps(this_res))
+                this_res = dict()
+                this_res['payload'] = json.dumps(lambda_cv_predict(yy, context))
+                results.append(this_res)
         else:
             loop = asyncio.get_event_loop()
             results = loop.run_until_complete(self.__invoke_aws_lambdas(payloads))
-
+        preds, requests = _extract_preds(results, smpls, params_names,
+                                         n_obs, n_rep, n_jobs_cv)
+        if self.lambda_function_name != 'local':
             df_lambda_metrics = _extract_lambda_metrics(results)
-            self.aws_lambda_detailed_metrics = self.aws_lambda_detailed_metrics.append(df_lambda_metrics)
-        return results
+            self.aws_lambda_detailed_metrics = self.aws_lambda_detailed_metrics.append(
+                pd.concat((requests, df_lambda_metrics), axis=1))
+        return preds
 
     async def __invoke_aws_lambdas(self, payloads):
         session = aiobotocore.get_session()
