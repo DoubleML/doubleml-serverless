@@ -1,5 +1,8 @@
 import numpy as np
+import pandas as pd
+
 import json
+import base64
 
 
 def _check_inds_are_partition(inds, n_obs):
@@ -73,16 +76,50 @@ def _extract_preds(results, smpls, keys, n_obs, n_rep, scaling):
     preds = {key: np.full((n_obs, n_rep), np.nan) for key in keys}
 
     if scaling == 'n_folds * n_rep':
+        fields = ['learner', 'i_rep', 'i_fold']
+        requests = {key: list() for key in fields}
         for this_res in results:
-            res_dict = json.loads(this_res)
+            res_dict = json.loads(this_res['payload'])
             assert res_dict['statusCode'] == 200
+            for key in fields:
+                requests[key].append(res_dict[key])
             test_index = smpls[res_dict['i_rep']][res_dict['i_fold']][1]
             preds[res_dict['learner']][test_index, res_dict['i_rep']] = res_dict['preds']
     else:
         assert scaling == 'n_rep'
+        fields = ['learner', 'i_rep']
+        requests = {key: list() for key in fields}
         for this_res in results:
-            res_dict = json.loads(this_res)
+            res_dict = json.loads(this_res['payload'])
             assert res_dict['statusCode'] == 200
+            for key in fields:
+                requests[key].append(res_dict[key])
             preds[res_dict['learner']][:, res_dict['i_rep']] = res_dict['preds']
+    requests = pd.DataFrame(requests)
+    return preds, requests
 
-    return preds
+
+def _extract_lambda_metrics(results):
+    df = pd.DataFrame()
+    for idx, this_res in enumerate(results):
+        logs_list = base64.b64decode(this_res['log']).decode('utf-8').split('\n')
+        report_line = logs_list[-2]
+        assert report_line.startswith('REPORT RequestId')
+        report_dict = dict(x.split(': ') for x in filter(None, report_line.split('\t')))
+        for key, value in report_dict.items():
+            if key in ['Duration', 'Billed Duration', 'Init Duration']:
+                xx = value.split(' ')
+                assert xx[1] == 'ms'
+                report_dict[key] = float(xx[0])
+            elif key in ['Memory Size', 'Max Memory Used']:
+                xx = value.split(' ')
+                assert xx[1] == 'MB'
+                report_dict[key] = float(xx[0])
+            else:
+                assert key == 'REPORT RequestId'
+        this_df = pd.DataFrame.from_dict(report_dict, orient='index').transpose()
+        this_df.rename(columns={'REPORT RequestId': 'RequestId'}, inplace=True)
+        df = df.append(this_df)
+    df['Billed Duration GBSeconds'] = df['Billed Duration'] / 1000 * df['Memory Size'] / 1000
+
+    return df
