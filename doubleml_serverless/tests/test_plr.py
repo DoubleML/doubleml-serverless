@@ -9,6 +9,7 @@ from sklearn.ensemble import RandomForestRegressor
 
 import doubleml as dml
 import doubleml_serverless as dml_lambda
+from helper_local_lambda_calls import DoubleMLPLRServerlessLocal
 
 from doubleml_serverless.tests.helper_general import get_n_datasets
 
@@ -62,12 +63,12 @@ def dml_plr_fixture(generate_data_plr, idx, learner, score, dml_procedure):
 
     np.random.seed(3141)
     dml_data_json = dml_lambda.DoubleMLDataJson(data, 'y', ['d'], x_cols)
-    dml_plr_lambda = dml_lambda.DoubleMLPLRServerless('LambdaCVPredict', 'local',
-                                                      dml_data_json,
-                                                      ml_g, ml_m,
-                                                      n_folds,
-                                                      score=score,
-                                                      dml_procedure=dml_procedure)
+    dml_plr_lambda = DoubleMLPLRServerlessLocal('local', 'local',
+                                                dml_data_json,
+                                                ml_g, ml_m,
+                                                n_folds,
+                                                score=score,
+                                                dml_procedure=dml_procedure)
 
     dml_plr_lambda.fit_aws_lambda()
 
@@ -144,22 +145,22 @@ def dml_plr_scaling_fixture(generate_data_plr, idx, learner, score, dml_procedur
     dml_data_json = dml_lambda.DoubleMLDataJson(data, 'y', ['d'], x_cols)
 
     np.random.seed(3141)
-    dml_plr_folds = dml_lambda.DoubleMLPLRServerless('LambdaCVPredict', 'local',
-                                                     dml_data_json,
-                                                     ml_g, ml_m,
-                                                     n_folds,
-                                                     score=score,
-                                                     dml_procedure=dml_procedure)
+    dml_plr_folds = DoubleMLPLRServerlessLocal('local', 'local',
+                                               dml_data_json,
+                                               ml_g, ml_m,
+                                               n_folds,
+                                               score=score,
+                                               dml_procedure=dml_procedure)
 
     dml_plr_folds.fit_aws_lambda('n_folds * n_rep')
 
     np.random.seed(3141)
-    dml_plr_reps = dml_lambda.DoubleMLPLRServerless('LambdaCVPredict', 'local',
-                                                    dml_data_json,
-                                                    ml_g, ml_m,
-                                                    n_folds,
-                                                    score=score,
-                                                    dml_procedure=dml_procedure)
+    dml_plr_reps = DoubleMLPLRServerlessLocal('local', 'local',
+                                              dml_data_json,
+                                              ml_g, ml_m,
+                                              n_folds,
+                                              score=score,
+                                              dml_procedure=dml_procedure)
 
     dml_plr_reps.fit_aws_lambda('n_rep')
 

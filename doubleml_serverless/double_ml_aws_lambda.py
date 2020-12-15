@@ -7,7 +7,6 @@ import json
 
 from abc import ABC, abstractmethod
 
-#from .lambda_functions.cv_predict import lambda_cv_predict
 from ._helper import _extract_preds, _extract_lambda_metrics
 
 
@@ -85,18 +84,13 @@ class DoubleMLLambda(ABC):
         return self
 
     def invoke_lambdas(self, payloads, smpls, params_names, n_obs, n_rep, n_jobs_cv):
-        if self.aws_region == 'local':
-            loop = asyncio.get_event_loop()
-            results = loop.run_until_complete(self.__invoke_aws_lambdas_locally(payloads))
-        else:
-            loop = asyncio.get_event_loop()
-            results = loop.run_until_complete(self.__invoke_aws_lambdas(payloads))
+        loop = asyncio.get_event_loop()
+        results = loop.run_until_complete(self.__invoke_aws_lambdas(payloads))
         preds, requests = _extract_preds(results, smpls, params_names,
                                          n_obs, n_rep, n_jobs_cv)
-        if self.aws_region != 'local':
-            df_lambda_metrics = _extract_lambda_metrics(results)
-            self.aws_lambda_detailed_metrics = self.aws_lambda_detailed_metrics.append(
-                pd.concat((requests, df_lambda_metrics), axis=1))
+        df_lambda_metrics = _extract_lambda_metrics(results)
+        self.aws_lambda_detailed_metrics = self.aws_lambda_detailed_metrics.append(
+            pd.concat((requests, df_lambda_metrics), axis=1))
         return preds
 
     async def __invoke_aws_lambdas(self, payloads):
@@ -121,39 +115,6 @@ class DoubleMLLambda(ABC):
             async with response['Payload'] as stream:
                 res['payload'] = await stream.read()
             res['log'] = response['LogResult']
-            # print(f'Finished {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
-
-        return res
-
-    async def __invoke_aws_lambdas_locally(self, payloads):
-        session = aiobotocore.get_session()
-        tasks = []
-        for this_payload in payloads:
-            tasks.append(self.__invoke_single_aws_lambda_locally(session, this_payload))
-        results = await asyncio.gather(*tasks)
-        return results
-
-    async def __invoke_single_aws_lambda_locally(self, session, payload):
-        async with session.create_client('lambda',
-                                         endpoint_url='http://127.0.0.1:3001',
-                                         use_ssl=False,
-                                         verify=False,
-                                         config=Config(signature_version=UNSIGNED,
-                                                       read_timeout=0,
-                                                       retries={'max_attempts': 0})
-                                         ) as lambda_client:
-            # print(f'Invoking {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
-            response = await lambda_client.invoke(
-                FunctionName=self.lambda_function_name,
-                InvocationType='RequestResponse',
-                LogType='None',
-                Payload=json.dumps(payload),
-            )
-            # print(f'Done {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
-            res = dict()
-            async with response['Payload'] as stream:
-                res['payload'] = await stream.read()
-            # res['log'] = response['LogResult']
             # print(f'Finished {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
 
         return res
