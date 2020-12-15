@@ -1,13 +1,18 @@
 import pandas as pd
 import asyncio
 import aiobotocore
+from botocore import UNSIGNED
+from botocore.config import Config
 import json
 
-from .lambda_functions.cv_predict import lambda_cv_predict
+from abc import ABC, abstractmethod
+
+#from .lambda_functions.cv_predict import lambda_cv_predict
 from ._helper import _extract_preds, _extract_lambda_metrics
 
 
-class DoubleMLLambda:
+class DoubleMLLambda(ABC):
+
     def __init__(self,
                  lambda_function_name,
                  aws_region):
@@ -41,24 +46,54 @@ class DoubleMLLambda:
         metrics['Avg Max Memory Used (MB)'] = df['Max Memory Used'].mean()
         return metrics
 
+    @abstractmethod
+    def _ml_nuisance_aws_lambda(self, cv_params):
+        pass
+
+    @abstractmethod
+    def _est_causal_pars_and_se(self):
+        pass
+
+    @abstractmethod
+    def _clean_scores(self):
+        pass
+
+    def fit_aws_lambda(self, n_lambdas_cv='n_folds * n_rep', seed=None, keep_scores=True):
+        """
+        Parameters
+        ----------
+        n_lambdas_cv : str
+
+        seed : int or None
+
+        keep_scores : bool
+        """
+        if (not isinstance(n_lambdas_cv, str)) | (n_lambdas_cv not in ['n_folds * n_rep', 'n_rep']):
+            raise ValueError('n_lambdas_cv must be "n_folds * n_rep" or "n_rep"'
+                             f' got {str(n_lambdas_cv)}')
+
+        # ml estimation of nuisance models and computation of score elements
+        cv_params = {'n_lambdas_cv': n_lambdas_cv,
+                     'seed': seed}
+        self._ml_nuisance_aws_lambda(cv_params)
+
+        self._est_causal_pars_and_se()
+
+        if not keep_scores:
+            self._clean_scores()
+
+        return self
+
     def invoke_lambdas(self, payloads, smpls, params_names, n_obs, n_rep, n_jobs_cv):
-        if self.lambda_function_name == 'local':
-            assert self.aws_region == 'local'
-            # this callable option is just for local testing
-            context = dict()
-            results = []
-            for this_payload in payloads:
-                xx = json.dumps(this_payload)
-                yy = json.loads(xx)
-                this_res = dict()
-                this_res['payload'] = json.dumps(lambda_cv_predict(yy, context))
-                results.append(this_res)
+        if self.aws_region == 'local':
+            loop = asyncio.get_event_loop()
+            results = loop.run_until_complete(self.__invoke_aws_lambdas_locally(payloads))
         else:
             loop = asyncio.get_event_loop()
             results = loop.run_until_complete(self.__invoke_aws_lambdas(payloads))
         preds, requests = _extract_preds(results, smpls, params_names,
                                          n_obs, n_rep, n_jobs_cv)
-        if self.lambda_function_name != 'local':
+        if self.aws_region != 'local':
             df_lambda_metrics = _extract_lambda_metrics(results)
             self.aws_lambda_detailed_metrics = self.aws_lambda_detailed_metrics.append(
                 pd.concat((requests, df_lambda_metrics), axis=1))
@@ -90,3 +125,35 @@ class DoubleMLLambda:
 
         return res
 
+    async def __invoke_aws_lambdas_locally(self, payloads):
+        session = aiobotocore.get_session()
+        tasks = []
+        for this_payload in payloads:
+            tasks.append(self.__invoke_single_aws_lambda_locally(session, this_payload))
+        results = await asyncio.gather(*tasks)
+        return results
+
+    async def __invoke_single_aws_lambda_locally(self, session, payload):
+        async with session.create_client('lambda',
+                                         endpoint_url='http://127.0.0.1:3001',
+                                         use_ssl=False,
+                                         verify=False,
+                                         config=Config(signature_version=UNSIGNED,
+                                                       read_timeout=0,
+                                                       retries={'max_attempts': 0})
+                                         ) as lambda_client:
+            # print(f'Invoking {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
+            response = await lambda_client.invoke(
+                FunctionName=self.lambda_function_name,
+                InvocationType='RequestResponse',
+                LogType='None',
+                Payload=json.dumps(payload),
+            )
+            # print(f'Done {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
+            res = dict()
+            async with response['Payload'] as stream:
+                res['payload'] = await stream.read()
+            # res['log'] = response['LogResult']
+            # print(f'Finished {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
+
+        return res

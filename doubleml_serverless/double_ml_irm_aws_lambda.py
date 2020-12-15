@@ -39,42 +39,14 @@ class DoubleMLIRMServerless(DoubleMLIRM, DoubleMLLambda):
                                 lambda_function_name,
                                 aws_region)
 
-    # this method overwrites DoubleML.fit() to implement the fit via aws lambda
-    def fit(self, n_jobs_cv='n_folds * n_rep', seed=None, keep_scores=True):
-        """
-        Parameters
-        ----------
-        n_jobs_cv : str
-
-        seed : int or None
-
-        keep_scores : bool
-        """
-
-        if (not isinstance(n_jobs_cv, str)) | (n_jobs_cv not in ['n_folds * n_rep', 'n_rep']):
-            raise ValueError('n_jobs_cv must be "n_folds * n_rep" or "n_rep"'
-                             f' got {str(n_jobs_cv)}')
-
+    def _ml_nuisance_aws_lambda(self, cv_params):
         assert self._dml_data.n_treat == 1
         self._i_treat = 0
 
-        # ml estimation of nuisance models and computation of score elements
-        psi_a, psi_b = self._ml_nuisance_and_score_elements(self.smpls, n_jobs_cv, seed)
-        self._psi_a[:, :, self._i_treat] = psi_a
-        self._psi_b[:, :, self._i_treat] = psi_b
-
-        self._est_causal_pars_and_se()
-
-        if not keep_scores:
-            self._clean_scores()
-
-        return self
-
-    def _ml_nuisance_and_score_elements(self, smpls, n_jobs_cv, seed):
         x, y = check_X_y(self._dml_data.x, self._dml_data.y)
         x, d = check_X_y(x, self._dml_data.d)
         # get train indices for d == 0 and d == 1
-        smpls_d0, smpls_d1 = _get_cond_smpls(smpls, d)
+        smpls_d0, smpls_d1 = _get_cond_smpls(self.smpls, d)
 
         payload = self._dml_data.get_payload()
 
@@ -97,33 +69,31 @@ class DoubleMLIRMServerless(DoubleMLIRM, DoubleMLLambda):
                         method='predict_proba')
         if (self.score == 'ATE') | callable(self.score):
             all_payloads = [payload_ml_g0, payload_ml_g1, payload_ml_m]
-            all_smpls = [smpls_d0, smpls_d1, smpls]
+            all_smpls = [smpls_d0, smpls_d1, self.smpls]
         else:
             all_payloads = [payload_ml_g0, payload_ml_m]
-            all_smpls = [smpls_d0, smpls]
+            all_smpls = [smpls_d0, self.smpls]
 
         payloads = _attach_smpls(all_payloads,
                                  all_smpls,
                                  self.n_folds,
                                  self.n_rep,
                                  self._dml_data.n_obs,
-                                 n_jobs_cv,
+                                 cv_params['n_lambdas_cv'],
                                  [True, True, False],
-                                 seed)
+                                 cv_params['seed'])
 
-        preds = self.invoke_lambdas(payloads, smpls, self.params_names,
+        preds = self.invoke_lambdas(payloads, self.smpls, self.params_names,
                                     self._dml_data.n_obs, self.n_rep,
-                                    n_jobs_cv)
-
-        psi_a = np.full((self._dml_data.n_obs, self.n_rep), np.nan)
-        psi_b = np.full((self._dml_data.n_obs, self.n_rep), np.nan)
+                                    cv_params['n_lambdas_cv'])
 
         for i_rep in range(self.n_rep):
             # compute score elements
-            psi_a[:, i_rep], psi_b[:, i_rep] = self._score_elements(y, d,
-                                                                    preds['ml_g0'][:, i_rep],
-                                                                    preds['ml_g1'][:, i_rep],
-                                                                    preds['ml_m'][:, i_rep],
-                                                                    smpls[i_rep])
+            self._psi_a[:, i_rep, self._i_treat], self._psi_b[:, i_rep, self._i_treat] = \
+                self._score_elements(y, d,
+                                     preds['ml_g0'][:, i_rep],
+                                     preds['ml_g1'][:, i_rep],
+                                     preds['ml_m'][:, i_rep],
+                                     self.smpls[i_rep])
 
-        return psi_a, psi_b
+        return

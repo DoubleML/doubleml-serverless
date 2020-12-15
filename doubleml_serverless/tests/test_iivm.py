@@ -71,14 +71,14 @@ def dml_iivm_fixture(generate_data_iivm, idx, learner, score, dml_procedure, tri
 
     np.random.seed(3141)
     dml_data_json = dml_lambda.DoubleMLDataJson(data, 'y', ['d'], x_cols, 'z')
-    dml_iivm_lambda = dml_lambda.DoubleMLIIVMServerless('local', 'local',
+    dml_iivm_lambda = dml_lambda.DoubleMLIIVMServerless('LambdaCVPredict', 'local',
                                                         dml_data_json,
                                                         ml_g, ml_m, ml_r,
                                                         n_folds,
                                                         score=score,
                                                         dml_procedure=dml_procedure)
 
-    dml_iivm_lambda.fit()
+    dml_iivm_lambda.fit_aws_lambda()
 
     np.random.seed(3141)
     dml_data = dml.DoubleMLData(data, 'y', ['d'], x_cols, 'z')
@@ -154,24 +154,24 @@ def dml_iivm_scaling_fixture(generate_data_iivm, idx, learner, score, dml_proced
     dml_data_json = dml_lambda.DoubleMLDataJson(data, 'y', ['d'], x_cols, 'z')
 
     np.random.seed(3141)
-    dml_iivm_folds = dml_lambda.DoubleMLIIVMServerless('local', 'local',
+    dml_iivm_folds = dml_lambda.DoubleMLIIVMServerless('LambdaCVPredict', 'local',
                                                        dml_data_json,
                                                        ml_g, ml_m, ml_r,
                                                        n_folds,
                                                        score=score,
                                                        dml_procedure=dml_procedure)
 
-    dml_iivm_folds.fit('n_folds * n_rep')
+    dml_iivm_folds.fit_aws_lambda('n_folds * n_rep')
 
     np.random.seed(3141)
-    dml_iivm_reps = dml_lambda.DoubleMLIIVMServerless('local', 'local',
+    dml_iivm_reps = dml_lambda.DoubleMLIIVMServerless('LambdaCVPredict', 'local',
                                                       dml_data_json,
                                                       ml_g, ml_m, ml_r,
                                                       n_folds,
                                                       score=score,
                                                       dml_procedure=dml_procedure)
 
-    dml_iivm_reps.fit('n_rep')
+    dml_iivm_reps.fit_aws_lambda('n_rep')
 
     res_dict = {'coef_folds': dml_iivm_folds.coef,
                 'coef_reps': dml_iivm_reps.coef,
