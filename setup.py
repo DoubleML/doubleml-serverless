@@ -18,7 +18,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='http://doubleml.org',
-    packages=find_packages(),
+    packages=find_packages(exclude=['aws_lambda_app*']),
     install_requires=[
         'joblib',
         'numpy',
