@@ -1,9 +1,8 @@
 import pandas as pd
 import asyncio
 import aiobotocore
-from botocore import UNSIGNED
-from botocore.config import Config
 import json
+import time
 
 from abc import ABC, abstractmethod
 
@@ -17,6 +16,7 @@ class DoubleMLLambda(ABC):
                  aws_region):
         self._lambda_function_name = lambda_function_name
         self._aws_region = aws_region
+        self._response_time_lambda = None
         self.aws_lambda_detailed_metrics = pd.DataFrame(columns=['learner', 'i_rep', 'i_fold',
                                                                  'RequestId', 'Duration', 'Billed Duration',
                                                                  'Memory Size', 'Max Memory Used', 'Init Duration',
@@ -43,6 +43,7 @@ class DoubleMLLambda(ABC):
             metrics['Memory Size (MB; last request)'] = df['Memory Size'].iloc[-1]
         metrics['Max Memory Used (MB)'] = df['Max Memory Used'].max()
         metrics['Avg Max Memory Used (MB)'] = df['Max Memory Used'].mean()
+        metrics['Response Time'] = self._response_time_lambda
         return metrics
 
     @abstractmethod
@@ -85,7 +86,10 @@ class DoubleMLLambda(ABC):
 
     def invoke_lambdas(self, payloads, smpls, params_names, n_obs, n_rep, n_jobs_cv):
         loop = asyncio.get_event_loop()
+        start_time = time.time()
         results = loop.run_until_complete(self.__invoke_aws_lambdas(payloads))
+        end_time = time.time()
+        self._response_time_lambda = end_time - start_time
         preds, requests = _extract_preds(results, smpls, params_names,
                                          n_obs, n_rep, n_jobs_cv)
         df_lambda_metrics = _extract_lambda_metrics(results)
