@@ -26,6 +26,8 @@ setup(
         'scipy',
         'sklearn',
         'statsmodels',
+        'aiobotocore==1.1.2',
+        'boto3==1.14.44',
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
