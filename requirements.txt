@@ -5,4 +5,5 @@ pandas
 scipy
 sklearn
 statsmodels
-aiobotocore
+boto3==1.14.44
+aiobotocore==1.1.2
