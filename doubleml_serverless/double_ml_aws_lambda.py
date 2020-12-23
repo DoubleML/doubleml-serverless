@@ -107,7 +107,7 @@ class DoubleMLLambda(ABC):
         return results
 
     async def __invoke_single_aws_lambda(self, session, payload):
-        config = AioConfig(connect_timeout=1000, read_timeout=1000)
+        config = AioConfig({'keepalive_timeout': 1000}, connect_timeout=1000, read_timeout=1000)
         async with session.create_client('lambda', region_name=self.aws_region, config=config) as lambda_client:
             # print(f'Invoking {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
             response = await lambda_client.invoke(
