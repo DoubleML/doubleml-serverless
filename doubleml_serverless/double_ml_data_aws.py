@@ -1,6 +1,6 @@
 from doubleml import DoubleMLData
 import os
-import boto3
+from botocore.session import Session
 import pandas as pd
 
 
@@ -50,7 +50,8 @@ class DoubleMLDataS3(DoubleMLData):
                 x_cols=None,
                 z_cols=None,
                 use_other_treat_as_covariate=True):
-        s3_client = boto3.client('s3')
+        session = Session()
+        s3_client = session.create_client('s3')
         response = s3_client.get_object(Bucket=bucket,
                                         Key=file_key)
         file = response["Body"]
@@ -65,7 +66,8 @@ class DoubleMLDataS3(DoubleMLData):
         # load csv as a pd.DataFrame
         file_name = os.path.split(self.file_key)[1]
         self.data.to_csv(file_name)
-        s3_client = boto3.client('s3')
+        session = Session()
+        s3_client = session.create_client('s3')
         response = s3_client.upload_file(Filename=file_name,
                                          Bucket=self.bucket,
                                          Key=self.file_key)
