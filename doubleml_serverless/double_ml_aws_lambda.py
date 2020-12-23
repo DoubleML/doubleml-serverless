@@ -1,6 +1,7 @@
 import pandas as pd
 import asyncio
-import aiobotocore
+from aiobotocore.session import get_session
+from aiobotocore.config import AioConfig
 import json
 import time
 
@@ -98,7 +99,7 @@ class DoubleMLLambda(ABC):
         return preds
 
     async def __invoke_aws_lambdas(self, payloads):
-        session = aiobotocore.get_session()
+        session = get_session()
         tasks = []
         for this_payload in payloads:
             tasks.append(self.__invoke_single_aws_lambda(session, this_payload))
@@ -106,7 +107,8 @@ class DoubleMLLambda(ABC):
         return results
 
     async def __invoke_single_aws_lambda(self, session, payload):
-        async with session.create_client('lambda', region_name=self.aws_region) as lambda_client:
+        config = AioConfig(connect_timeout=1000, read_timeout=1000)
+        async with session.create_client('lambda', region_name=self.aws_region, config=config) as lambda_client:
             # print(f'Invoking {payload["learner"]} {payload["i_rep"]} {payload["i_fold"]}')
             response = await lambda_client.invoke(
                 FunctionName=self.lambda_function_name,
