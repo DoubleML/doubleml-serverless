@@ -5,7 +5,7 @@ Description: SAM Template for doubleml-serverless
 Metadata:
   AWS::ServerlessRepo::Application:
     Name: doubleml-serverless
-    Description: Distributed Double Machine Learning with AWS Lambda
+    Description: Distributed Double Machine Learning with a Serverless Architecture
     Author: Malte S. Kurz
     SpdxLicenseId: MIT
     LicenseUrl: ../LICENSE

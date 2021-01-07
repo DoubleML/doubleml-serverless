@@ -1,2 +1,3 @@
-# DoubleML-Serverless - Double Machine Learning with serverless scaling
+# DoubleML-Serverless - Distributed Double Machine Learning with a Serverless Architecture
+
 
