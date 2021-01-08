@@ -10,8 +10,8 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 import doubleml as dml
 import doubleml_serverless as dml_lambda
-from helper_local_lambda_calls import DoubleMLIIVMServerlessLocal
 
+from doubleml_serverless.tests.helper_local_lambda_calls import DoubleMLIIVMServerlessLocal
 from doubleml_serverless.tests.helper_general import get_n_datasets
 
 # number of datasets per dgp
