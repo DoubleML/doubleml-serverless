@@ -17,9 +17,10 @@ setup(
     description='Double Machine Learning with Serverless Scaling',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='http://doubleml.org',
+    url='https://github.com/DoubleML/doubleml-serverless',
     packages=find_packages(exclude=['aws_lambda_app*']),
     install_requires=[
+        'DoubleML>=0.1.2',
         'joblib',
         'numpy',
         'pandas',
