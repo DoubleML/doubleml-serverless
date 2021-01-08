@@ -2,23 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: SAM Template for doubleml-serverless
 
-Metadata:
-  AWS::ServerlessRepo::Application:
-    Name: doubleml-serverless
-    Description: Distributed Double Machine Learning with a Serverless Architecture
-    Author: Malte S. Kurz
-    SpdxLicenseId: MIT
-    LicenseUrl: ../LICENSE
-    ReadmeUrl: ../README.md
-    Labels: ['machine-learning', 'python', 'ml', 'scikit-learn']
-    HomePageUrl: https://github.com/DoubleML/doubleml-serverless
-    SemanticVersion: 0.0.1
-    SourceCodeUrl: https://github.com/DoubleML/doubleml-serverless
-
-Globals:
-  Function:
-    Timeout: 180
-
 Parameters:
   CreateS3BucketForDataTransfer:
     Type: String
