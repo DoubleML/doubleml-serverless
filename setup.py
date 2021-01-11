@@ -14,7 +14,7 @@ setup(
     author='Kurz, M. S.',
     maintainer='Malte S. Kurz',
     maintainer_email='malte.simon.kurz@uni-hamburg.de',
-    description='Double Machine Learning with Serverless Scaling',
+    description='Distributed Double Machine Learning with a Serverless Architecture',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/DoubleML/doubleml-serverless',
