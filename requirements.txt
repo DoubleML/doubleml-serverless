@@ -1,9 +1,9 @@
-DoubleML
+DoubleML>=0.1.2
 joblib
 numpy
 pandas
 scipy
 sklearn
 statsmodels
-boto3==1.14.44
 aiobotocore==1.1.2
+boto3==1.14.44

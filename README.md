@@ -43,7 +43,7 @@ The corresponding serverless application consists of the following components:
 
 There are two options for deployment:
 
-1. A version of DoubleML-Serverless is available in the AWS Serverless Application Repository. It can be deployed by clicking on the `Deploy` button.
+1. A version of DoubleML-Serverless is available in the AWS Serverless Application Repository: [https://serverlessrepo.aws.amazon.com/applications/eu-central-1/839779594349/doubleml-serverless](https://serverlessrepo.aws.amazon.com/applications/eu-central-1/839779594349/doubleml-serverless). It can be deployed by clicking on the `Deploy` button.
 
 2. The second option for deployment is based on AWS Serverless Application Model (AWS SAM).
 
