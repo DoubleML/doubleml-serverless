@@ -2,7 +2,7 @@
 
 This repo contains a prototype implementation **DoubleML-Serverless** of distributed double machine learning with a serverless infrastructure
 using [AWS Lambda](https://aws.amazon.com/lambda).
-A detailed discussion of this prototype can be found in the paper "Distributed Double Machine Learning with a  Serverless Architecture" (Kurz, 2021).
+A detailed discussion of this prototype can be found in the paper ["Distributed Double Machine Learning with a Serverless Architecture" (Kurz, 2021)](https://arxiv.org/abs/2101.04025).
 DoubleML-Serverless is an extension for serverless cloud computing of the Python package **DoubleML**.
 DoubleML is available via PyPI [https://pypi.org/project/DoubleML](https://pypi.org/project/DoubleML) and on GitHub [https://github.com/DoubleML/doubleml-for-py](https://github.com/DoubleML/doubleml-for-py).
 Also see [https://docs.doubleml.org](https://docs.doubleml.org) for a detailed documentation and user guide for the DoubleML package.
@@ -117,4 +117,4 @@ Some metrics about the estimation on AWS Lambda can be obtained via the property
 Chernozhukov, V., Chetverikov, D., Demirer, M., Duflo, E., Hansen, C., Newey, W. and Robins, J. (2018),
 Double/debiased machine learning for treatment and structural parameters. The Econometrics Journal, 21: C1-C68. doi:[10.1111/ectj.12097](https://doi.org/10.1111/ectj.12097).
 
-Kurz, M.S. 2020. "Distributed Double Machine Learning with a  Serverless Architecture". Unpublished Working Paper.
+Kurz, M.S. 2020. "Distributed Double Machine Learning with a  Serverless Architecture". [arXiv:cs.DC/2101.04025](https://arxiv.org/abs/2101.04025)
