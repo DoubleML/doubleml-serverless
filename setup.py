@@ -10,7 +10,7 @@ with open('README.md', 'r') as fh:
 
 setup(
     name='DoubleML-Serverless',
-    version='0.0.1',
+    version='0.0.2',
     author='Kurz, M. S.',
     maintainer='Malte S. Kurz',
     maintainer_email='malte.simon.kurz@uni-hamburg.de',
