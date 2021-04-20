@@ -51,8 +51,16 @@ def trimming_threshold(request):
     return request.param
 
 
+@pytest.fixture(scope='module',
+                params=[{'always_takers': True, 'never_takers': True},
+                        {'always_takers': False, 'never_takers': True},
+                        {'always_takers': True, 'never_takers': False}])
+def subgroups(request):
+    return request.param
+
+
 @pytest.fixture(scope="module")
-def dml_iivm_fixture(generate_data_iivm, idx, learner, score, dml_procedure, trimming_threshold):
+def dml_iivm_fixture(generate_data_iivm, idx, learner, score, dml_procedure, trimming_threshold, subgroups):
     boot_methods = ['normal']
     n_folds = 4
     n_rep_boot = 502
@@ -77,6 +85,7 @@ def dml_iivm_fixture(generate_data_iivm, idx, learner, score, dml_procedure, tri
                                                   ml_g, ml_m, ml_r,
                                                   n_folds,
                                                   score=score,
+                                                  subgroups=subgroups,
                                                   dml_procedure=dml_procedure)
 
     dml_iivm_lambda.fit_aws_lambda()
@@ -87,6 +96,7 @@ def dml_iivm_fixture(generate_data_iivm, idx, learner, score, dml_procedure, tri
                                 ml_g, ml_m, ml_r,
                                 n_folds,
                                 score=score,
+                                subgroups=subgroups,
                                 dml_procedure=dml_procedure)
 
     dml_iivm.fit()
