@@ -19,6 +19,7 @@ class DoubleMLIIVMServerless(DoubleMLIIVM, DoubleMLLambda):
                  n_folds=5,
                  n_rep=1,
                  score='ATE',
+                 subgroups=None,
                  dml_procedure='dml2',
                  trimming_rule='truncate',
                  trimming_threshold=1e-12,
@@ -32,6 +33,7 @@ class DoubleMLIIVMServerless(DoubleMLIIVM, DoubleMLLambda):
                               n_folds,
                               n_rep,
                               score,
+                              subgroups,
                               dml_procedure,
                               trimming_rule,
                               trimming_threshold,
@@ -72,18 +74,30 @@ class DoubleMLIIVMServerless(DoubleMLIIVM, DoubleMLLambda):
                         self._dml_data.z_cols[0], self._dml_data.x_cols,
                         method='predict_proba')
 
-        _attach_learner(payload_ml_r0,
-                        'ml_r0', self.learner['ml_r'],
-                        self._dml_data.d_cols[0], self._dml_data.x_cols,
-                        method='predict_proba')
+        all_payloads = [payload_ml_g0, payload_ml_g1, payload_ml_m]
+        all_smpls = [smpls_z0, smpls_z1, self.smpls]
+        send_train_ids = [True, True, False]
+        params_names = ['ml_g0', 'ml_g1', 'ml_m']
 
-        _attach_learner(payload_ml_r1,
-                        'ml_r1', self.learner['ml_r'],
-                        self._dml_data.d_cols[0], self._dml_data.x_cols,
-                        method='predict_proba')
+        if self.subgroups['always_takers']:
+            _attach_learner(payload_ml_r0,
+                            'ml_r0', self.learner['ml_r'],
+                            self._dml_data.d_cols[0], self._dml_data.x_cols,
+                            method='predict_proba')
+            all_payloads.append(payload_ml_r0)
+            all_smpls.append(smpls_z0)
+            send_train_ids.append(True)
+            params_names.append('ml_r0')
 
-        all_payloads = [payload_ml_g0, payload_ml_g1, payload_ml_m, payload_ml_r0, payload_ml_r1]
-        all_smpls = [smpls_z0, smpls_z1, self.smpls, smpls_z0, smpls_z1]
+        if self.subgroups['never_takers']:
+            _attach_learner(payload_ml_r1,
+                            'ml_r1', self.learner['ml_r'],
+                            self._dml_data.d_cols[0], self._dml_data.x_cols,
+                            method='predict_proba')
+            all_payloads.append(payload_ml_r1)
+            all_smpls.append(smpls_z1)
+            send_train_ids.append(True)
+            params_names.append('ml_r1')
 
         payloads = _attach_smpls(all_payloads,
                                  all_smpls,
@@ -91,12 +105,17 @@ class DoubleMLIIVMServerless(DoubleMLIIVM, DoubleMLLambda):
                                  self.n_rep,
                                  self._dml_data.n_obs,
                                  cv_params['n_lambdas_cv'],
-                                 [True, True, False, True, True],
+                                 send_train_ids,
                                  cv_params['seed'])
 
-        preds = self.invoke_lambdas(payloads, self.smpls, self.params_names,
+        preds = self.invoke_lambdas(payloads, self.smpls, params_names,
                                     self._dml_data.n_obs, self.n_rep,
                                     cv_params['n_lambdas_cv'])
+
+        if not self.subgroups['always_takers']:
+            preds['ml_r0'] = np.zeros_like(preds['ml_g0'])
+        if not self.subgroups['never_takers']:
+            preds['ml_r1'] = np.ones_like(preds['ml_g1'])
 
         for i_rep in range(self.n_rep):
             # compute score elements

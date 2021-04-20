@@ -1,13 +1,17 @@
-# DoubleML-Serverless - Distributed Double Machine Learning with a Serverless Architecture
+# DoubleML-Serverless - Distributed Double Machine Learning with a Serverless Architecture <a href="https://docs.doubleml.org"><img src="https://raw.githubusercontent.com/DoubleML/doubleml-for-py/master/doc/logo.png" align="right" width = "120" /></a>
 
 This repo contains a prototype implementation **DoubleML-Serverless** of distributed double machine learning with a serverless infrastructure
 using [AWS Lambda](https://aws.amazon.com/lambda).
-A detailed discussion of this prototype can be found in the paper "Distributed Double Machine Learning with a  Serverless Architecture" (Kurz, 2021).
+A detailed discussion of this prototype can be found in the paper ["Distributed Double Machine Learning with a Serverless Architecture" (Kurz, 2021)](https://doi.org/10.1145/3447545.3451181).
 DoubleML-Serverless is an extension for serverless cloud computing of the Python package **DoubleML**.
 DoubleML is available via PyPI [https://pypi.org/project/DoubleML](https://pypi.org/project/DoubleML) and on GitHub [https://github.com/DoubleML/doubleml-for-py](https://github.com/DoubleML/doubleml-for-py).
-Also see [https://docs.doubleml.org](https://docs.doubleml.org) for a detailed documentation and user guide for the DoubleML package.
+The Python package DoubleML was introduced in
+"DoubleML - An Object-Oriented Implementation of Double Machine Learning in Python"
+([Bach et al., 2021](https://arxiv.org/abs/2104.03220))
+and a detailed documentation \& user guide for the package is available at
+[https://docs.doubleml.org](https://docs.doubleml.org).
 
-## Getting started
+## Getting Started
 
 ### Installation of DoubleML-Serverless
 
@@ -30,7 +34,7 @@ After downloading the wheel, the package can be installed with pip (replace `XXX
 pip install -U DoubleML-Serverless-XXX-py3-none-any.whl
 ```
 
-### Deploy the corresponding serverless app to AWS Lambda using AWS SAM
+### Deploy the Corresponding Serverless App to AWS Lambda using AWS SAM
 
 To use AWS Lambda for estimating double machine learning models, a deployment in your AWS account is necessary.
 The corresponding serverless application consists of the following components:
@@ -56,11 +60,11 @@ There are two options for deployment:
     sam deploy --guided
     ```
 
-### Estimating a partially linear regression model with double machine learning and serverless scaling using AWS Lambda
+### Estimating a Partially Linear Regression Model with Double Machine Learning and Serverless Scaling Using AWS Lambda
 
 To demonstrate the functionality of DoubleML-Serverless we revisit the Pennsylvania  Reemployment Bonus experiment
-and estimate the effect of provisioning a cash bonus on the unemployment duration as studied in Chernozhukov et al. (2018).
-This example is also discussed in the accompanying paper to the DoubleML-Serverless package (Kurz, 2021).
+and estimate the effect of provisioning a cash bonus on the unemployment duration as studied in [Chernozhukov et al. (2018)](https://doi.org/10.1111/ectj.12097).
+This example is also discussed in the accompanying paper to the DoubleML-Serverless package ([Kurz, 2021](https://doi.org/10.1145/3447545.3451181)).
 
 We first load the data using functionalities from the DoubleML package.
 ```python
@@ -112,9 +116,48 @@ dml_lambda_plr_bonus.fit_aws_lambda()
 A summary of the estimation result is available via the property `dml_lambda_plr_bonus.summary`.
 Some metrics about the estimation on AWS Lambda can be obtained via the property  `dml_lambda_plr_bonus.aws_lambda_metrics`.
 
+## Citation
+
+If you use the DoubleML-Serverless package a citation is highly appreciated:
+
+Kurz, M. S. (2021). Distributed Double Machine Learning with a Serverless Architecture.
+In Companion of the ACM/SPEC International Conference on Performance Engineering (ICPE '21).
+Association for Computing Machinery, New York, NY, USA, 27–33.
+doi:[10.1145/3447545.3451181](https://doi.org/10.1145/3447545.3451181).
+
+Bibtex-entry:
+
+```
+@inproceedings{kurz2021DoublemlServerless,
+   author = {Kurz, Malte S.},
+   title = {Distributed Double Machine Learning with a Serverless Architecture},
+   year = {2021},
+   isbn = {9781450383318},
+   publisher = {Association for Computing Machinery},
+   address = {New York, NY, USA},
+   url = {https://doi.org/10.1145/3447545.3451181},
+   doi = {10.1145/3447545.3451181},
+   abstract = {This paper explores serverless cloud computing for double machine learning. Being based on repeated cross-fitting, double machine learning is particularly well suited to exploit the high level of parallelism achievable with serverless computing. It allows to get fast on-demand estimations without additional cloud maintenance effort. We provide a prototype Python implementation DoubleML-Serverless for the estimation of double machine learning models with the serverless computing platform AWS Lambda and demonstrate its utility with a case study analyzing estimation times and costs.},
+   booktitle = {Companion of the ACM/SPEC International Conference on Performance Engineering},
+   pages = {27--33},
+   numpages = {7},
+   keywords = {machine learning, causal machine learning, serverless computing, distributed computing, AWS Lambda, function-as-a-service (FAAS)},
+   location = {Virtual Event, France},
+   series = {ICPE '21}
+}
+```
+
 ## References
 
-Chernozhukov, V., Chetverikov, D., Demirer, M., Duflo, E., Hansen, C., Newey, W. and Robins, J. (2018),
-Double/debiased machine learning for treatment and structural parameters. The Econometrics Journal, 21: C1-C68. doi:[10.1111/ectj.12097](https://doi.org/10.1111/ectj.12097).
+Bach, P., Chernozhukov, V., Kurz, M. S., and Spindler, M. (2021).
+DoubleML - An Object-Oriented Implementation of Double Machine Learning in Python.
+arXiv:[2104.03220](https://arxiv.org/abs/2104.03220).
 
-Kurz, M.S. 2020. "Distributed Double Machine Learning with a  Serverless Architecture". Unpublished Working Paper.
+Chernozhukov, V., Chetverikov, D., Demirer, M., Duflo, E., Hansen, C., Newey, W. and Robins, J. (2018).
+Double/debiased machine learning for treatment and structural parameters. The Econometrics Journal, 21: C1-C68.
+doi:[10.1111/ectj.12097](https://doi.org/10.1111/ectj.12097).
+
+Kurz, M. S. (2021). Distributed Double Machine Learning with a Serverless Architecture.
+In Companion of the ACM/SPEC International Conference on Performance Engineering (ICPE '21).
+Association for Computing Machinery, New York, NY, USA, 27–33.
+doi:[10.1145/3447545.3451181](https://doi.org/10.1145/3447545.3451181).
