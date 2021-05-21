@@ -19,14 +19,29 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9']
+        config:
+          - {python-version: '3.6', doubleml-version: 'release'}
+          - {python-version: '3.7', doubleml-version: 'release'}
+          - {python-version: '3.8', doubleml-version: 'release'}
+          - {python-version: '3.8', doubleml-version: 'dev'}
+          - {python-version: '3.9', doubleml-version: 'release'}
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python ${{ matrix.config.python-version }}
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ matrix.config.python-version }}
+    - uses: actions/checkout@v2
+      if: matrix.config.doubleml-version == 'dev'
+      with:
+        repository: DoubleML/doubleml-for-py
+        path: doubleml-for-py
+    - name: DoubleML dev version
+      if: matrix.config.doubleml-version == 'dev'
+      run: |
+        cd doubleml-for-py
+        pip install --editable .
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
