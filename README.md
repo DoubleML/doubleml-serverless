@@ -7,7 +7,7 @@ DoubleML-Serverless is an extension for serverless cloud computing of the Python
 DoubleML is available via PyPI [https://pypi.org/project/DoubleML](https://pypi.org/project/DoubleML) and on GitHub [https://github.com/DoubleML/doubleml-for-py](https://github.com/DoubleML/doubleml-for-py).
 The Python package DoubleML was introduced in
 "DoubleML - An Object-Oriented Implementation of Double Machine Learning in Python"
-([Bach et al., 2021](https://arxiv.org/abs/2104.03220))
+([Bach et al., 2022](https://www.jmlr.org/papers/v23/21-0862.html))
 and a detailed documentation \& user guide for the package is available at
 [https://docs.doubleml.org](https://docs.doubleml.org).
 
@@ -149,9 +149,10 @@ Bibtex-entry:
 
 ## References
 
-Bach, P., Chernozhukov, V., Kurz, M. S., and Spindler, M. (2021).
-DoubleML - An Object-Oriented Implementation of Double Machine Learning in Python.
-arXiv:[2104.03220](https://arxiv.org/abs/2104.03220).
+Bach, P., Chernozhukov, V., Kurz, M. S., and Spindler, M. (2022), DoubleML - An
+Object-Oriented Implementation of Double Machine Learning in Python,
+Journal of Machine Learning Research, 23(53): 1-6,
+[https://www.jmlr.org/papers/v23/21-0862.html](https://www.jmlr.org/papers/v23/21-0862.html).
 
 Chernozhukov, V., Chetverikov, D., Demirer, M., Duflo, E., Hansen, C., Newey, W. and Robins, J. (2018).
 Double/debiased machine learning for treatment and structural parameters. The Econometrics Journal, 21: C1-C68.
