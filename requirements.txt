@@ -1,4 +1,4 @@
-DoubleML>=0.2.2
+DoubleML>=0.5.0
 joblib
 numpy
 pandas
