@@ -1,9 +1,8 @@
 from doubleml import DoubleMLPLR
-import numpy as np
 from sklearn.utils import check_X_y
 
 from .double_ml_aws_lambda import DoubleMLLambda
-from ._helper import _attach_learner, _attach_smpls, _extract_preds
+from ._helper import _attach_learner, _attach_smpls
 
 
 class DoubleMLPLRServerless(DoubleMLPLR, DoubleMLLambda):

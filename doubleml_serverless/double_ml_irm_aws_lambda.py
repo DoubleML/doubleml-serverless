@@ -1,5 +1,4 @@
 from doubleml import DoubleMLIRM
-import numpy as np
 from sklearn.utils import check_X_y
 
 from ._helper import _get_cond_smpls
