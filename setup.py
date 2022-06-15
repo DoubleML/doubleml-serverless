@@ -20,7 +20,7 @@ setup(
     url='https://github.com/DoubleML/doubleml-serverless',
     packages=find_packages(exclude=['aws_lambda_app*']),
     install_requires=[
-        'DoubleML>=0.2.2',
+        'DoubleML>=0.5.0',
         'joblib',
         'numpy',
         'pandas',
