@@ -47,12 +47,12 @@ class DoubleMLPLIVServerless(DoubleMLPLIV, DoubleMLLambda):
 
         payload = self._dml_data.get_payload()
 
-        payload_ml_g = payload.copy()
+        payload_ml_l = payload.copy()
         payload_ml_m = payload.copy()
         payload_ml_r = payload.copy()
 
-        _attach_learner(payload_ml_g,
-                        'ml_g', self.learner['ml_g'],
+        _attach_learner(payload_ml_l,
+                        'ml_l', self.learner['ml_l'],
                         self._dml_data.y_col, self._dml_data.x_cols)
 
         _attach_learner(payload_ml_m,
@@ -63,7 +63,7 @@ class DoubleMLPLIVServerless(DoubleMLPLIV, DoubleMLLambda):
                         'ml_r', self.learner['ml_r'],
                         self._dml_data.d_cols[0], self._dml_data.x_cols)
 
-        payloads = _attach_smpls([payload_ml_g, payload_ml_m, payload_ml_r],
+        payloads = _attach_smpls([payload_ml_l, payload_ml_m, payload_ml_r],
                                  [self.smpls, self.smpls, self.smpls],
                                  self.n_folds,
                                  self.n_rep,
@@ -80,9 +80,10 @@ class DoubleMLPLIVServerless(DoubleMLPLIV, DoubleMLLambda):
             # compute score elements
             self._psi_a[:, i_rep, self._i_treat], self._psi_b[:, i_rep, self._i_treat] = \
                 self._score_elements(y, z, d,
-                                     preds['ml_g'][:, i_rep],
+                                     preds['ml_l'][:, i_rep],
                                      preds['ml_m'][:, i_rep],
                                      preds['ml_r'][:, i_rep],
+                                     None,
                                      self.smpls[i_rep])
 
         return

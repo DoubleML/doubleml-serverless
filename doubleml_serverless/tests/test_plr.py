@@ -32,7 +32,7 @@ def learner(request):
 
 
 @pytest.fixture(scope='module',
-                params=['IV-type', 'partialling out'])
+                params=['partialling out'])
 def score(request):
     return request.param
 
@@ -58,15 +58,15 @@ def dml_plr_fixture(generate_data_plr, idx, learner, score, dml_procedure):
     x_cols = data.columns[data.columns.str.startswith('X')].tolist()
 
     # Set machine learning methods for m & g
-    ml_g = clone(learner)
+    ml_l = clone(learner)
     ml_m = clone(learner)
 
     np.random.seed(3141)
     dml_data_json = dml_lambda.DoubleMLDataJson(data, 'y', ['d'], x_cols)
     dml_plr_lambda = DoubleMLPLRServerlessLocal('local', 'local',
                                                 dml_data_json,
-                                                ml_g, ml_m,
-                                                n_folds,
+                                                ml_l, ml_m,
+                                                n_folds=n_folds,
                                                 score=score,
                                                 dml_procedure=dml_procedure)
 
@@ -75,8 +75,8 @@ def dml_plr_fixture(generate_data_plr, idx, learner, score, dml_procedure):
     np.random.seed(3141)
     dml_data = dml.DoubleMLData(data, 'y', ['d'], x_cols)
     dml_plr = dml.DoubleMLPLR(dml_data,
-                              ml_g, ml_m,
-                              n_folds,
+                              ml_l, ml_m,
+                              n_folds=n_folds,
                               score=score,
                               dml_procedure=dml_procedure)
 
@@ -139,7 +139,7 @@ def dml_plr_scaling_fixture(generate_data_plr, idx, learner, score, dml_procedur
     x_cols = data.columns[data.columns.str.startswith('X')].tolist()
 
     # Set machine learning methods for m & g
-    ml_g = clone(learner)
+    ml_l = clone(learner)
     ml_m = clone(learner)
 
     dml_data_json = dml_lambda.DoubleMLDataJson(data, 'y', ['d'], x_cols)
@@ -147,8 +147,8 @@ def dml_plr_scaling_fixture(generate_data_plr, idx, learner, score, dml_procedur
     np.random.seed(3141)
     dml_plr_folds = DoubleMLPLRServerlessLocal('local', 'local',
                                                dml_data_json,
-                                               ml_g, ml_m,
-                                               n_folds,
+                                               ml_l, ml_m,
+                                               n_folds=n_folds,
                                                score=score,
                                                dml_procedure=dml_procedure)
 
@@ -157,8 +157,8 @@ def dml_plr_scaling_fixture(generate_data_plr, idx, learner, score, dml_procedur
     np.random.seed(3141)
     dml_plr_reps = DoubleMLPLRServerlessLocal('local', 'local',
                                               dml_data_json,
-                                              ml_g, ml_m,
-                                              n_folds,
+                                              ml_l, ml_m,
+                                              n_folds=n_folds,
                                               score=score,
                                               dml_procedure=dml_procedure)
 

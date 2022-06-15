@@ -58,7 +58,7 @@ def dml_pliv_fixture(generate_data_pliv, idx, learner, score, dml_procedure):
     x_cols = data.columns[data.columns.str.startswith('X')].tolist()
 
     # Set machine learning methods for m & g
-    ml_g = clone(learner)
+    ml_l = clone(learner)
     ml_m = clone(learner)
     ml_r = clone(learner)
 
@@ -66,8 +66,8 @@ def dml_pliv_fixture(generate_data_pliv, idx, learner, score, dml_procedure):
     dml_data_json = dml_lambda.DoubleMLDataJson(data, 'y', ['d'], x_cols, 'Z1')
     dml_pliv_lambda = DoubleMLPLIVServerlessLocal('local', 'local',
                                                   dml_data_json,
-                                                  ml_g, ml_m, ml_r,
-                                                  n_folds,
+                                                  ml_l, ml_m, ml_r,
+                                                  n_folds=n_folds,
                                                   score=score,
                                                   dml_procedure=dml_procedure)
 
@@ -76,8 +76,8 @@ def dml_pliv_fixture(generate_data_pliv, idx, learner, score, dml_procedure):
     np.random.seed(3141)
     dml_data = dml.DoubleMLData(data, 'y', ['d'], x_cols, 'Z1')
     dml_pliv = dml.DoubleMLPLIV(dml_data,
-                                ml_g, ml_m, ml_r,
-                                n_folds,
+                                ml_l, ml_m, ml_r,
+                                n_folds=n_folds,
                                 score=score,
                                 dml_procedure=dml_procedure)
 
@@ -140,7 +140,7 @@ def dml_pliv_scaling_fixture(generate_data_pliv, idx, learner, score, dml_proced
     x_cols = data.columns[data.columns.str.startswith('X')].tolist()
 
     # Set machine learning methods for m & g
-    ml_g = clone(learner)
+    ml_l = clone(learner)
     ml_m = clone(learner)
     ml_r = clone(learner)
 
@@ -149,8 +149,8 @@ def dml_pliv_scaling_fixture(generate_data_pliv, idx, learner, score, dml_proced
     np.random.seed(3141)
     dml_pliv_folds = DoubleMLPLIVServerlessLocal('local', 'local',
                                                  dml_data_json,
-                                                 ml_g, ml_m, ml_r,
-                                                 n_folds,
+                                                 ml_l, ml_m, ml_r,
+                                                 n_folds=n_folds,
                                                  score=score,
                                                  dml_procedure=dml_procedure)
 
@@ -159,8 +159,8 @@ def dml_pliv_scaling_fixture(generate_data_pliv, idx, learner, score, dml_proced
     np.random.seed(3141)
     dml_pliv_reps = DoubleMLPLIVServerlessLocal('local', 'local',
                                                 dml_data_json,
-                                                ml_g, ml_m, ml_r,
-                                                n_folds,
+                                                ml_l, ml_m, ml_r,
+                                                n_folds=n_folds,
                                                 score=score,
                                                 dml_procedure=dml_procedure)
 
