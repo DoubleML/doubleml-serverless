@@ -24,20 +24,20 @@ class DoubleMLIRMServerless(DoubleMLIRM, DoubleMLLambda):
                  draw_sample_splitting=True,
                  apply_cross_fitting=True):
         DoubleMLIRM.__init__(self,
-                             obj_dml_data,
-                             ml_g,
-                             ml_m,
-                             n_folds,
-                             n_rep,
-                             score,
-                             dml_procedure,
-                             trimming_rule,
-                             trimming_threshold,
-                             draw_sample_splitting,
-                             apply_cross_fitting)
+                             obj_dml_data=obj_dml_data,
+                             ml_g=ml_g,
+                             ml_m=ml_m,
+                             n_folds=n_folds,
+                             n_rep=n_rep,
+                             score=score,
+                             dml_procedure=dml_procedure,
+                             trimming_rule=trimming_rule,
+                             trimming_threshold=trimming_threshold,
+                             draw_sample_splitting=draw_sample_splitting,
+                             apply_cross_fitting=apply_cross_fitting)
         DoubleMLLambda.__init__(self,
-                                lambda_function_name,
-                                aws_region)
+                                lambda_function_name=lambda_function_name,
+                                aws_region=aws_region)
 
     def _ml_nuisance_aws_lambda(self, cv_params):
         assert self._dml_data.n_treat == 1
