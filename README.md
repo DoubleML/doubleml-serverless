@@ -1,4 +1,4 @@
-# DoubleML-Serverless - Distributed Double Machine Learning with a Serverless Architecture <a href="https://docs.doubleml.org"><img src="https://raw.githubusercontent.com/DoubleML/doubleml-for-py/master/doc/logo.png" align="right" width = "120" /></a>
+# DoubleML-Serverless - Distributed Double Machine Learning with a Serverless Architecture <a href="https://docs.doubleml.org"><img src="https://raw.githubusercontent.com/DoubleML/doubleml-for-py/main/doc/logo.png" align="right" width = "120" /></a>
 
 This repo contains a prototype implementation **DoubleML-Serverless** of distributed double machine learning with a serverless infrastructure
 using [AWS Lambda](https://aws.amazon.com/lambda).
@@ -39,7 +39,7 @@ pip install -U DoubleML-Serverless-XXX-py3-none-any.whl
 To use AWS Lambda for estimating double machine learning models, a deployment in your AWS account is necessary.
 The corresponding serverless application consists of the following components:
 
-* A AWS Lambda function called `LambdaCVPredict` (the source code is taken from this repository [https://github.com/DoubleML/doubleml-serverless/blob/master/aws_lambda_app/lambda_functions/cv_predict.py](https://github.com/DoubleML/doubleml-serverless/blob/master/aws_lambda_app/lambda_functions/cv_predict.py)).
+* A AWS Lambda function called `LambdaCVPredict` (the source code is taken from this repository [https://github.com/DoubleML/doubleml-serverless/blob/main/aws_lambda_app/lambda_functions/cv_predict.py](https://github.com/DoubleML/doubleml-serverless/blob/main/aws_lambda_app/lambda_functions/cv_predict.py)).
 * A layer providing the Python libraries `scikit-learn`, `pandas` and `numpy` together with their dependencies.
 * An S3 bucket for the data transfer (can be optionally generated, or an existing bucket is used).
 * A role for the execution of the lambda function `LambdaCVPredict` which consists of the AWS-managed `AWSLambdaBasicExecutionRole` policy plus read access to the S3 bucket for data transfer.
