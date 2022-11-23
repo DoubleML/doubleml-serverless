@@ -27,12 +27,12 @@ jobs:
           - {python-version: '3.9', doubleml-version: 'release'}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.config.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.config.python-version }}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       if: matrix.config.doubleml-version == 'dev'
       with:
         repository: DoubleML/doubleml-for-py
