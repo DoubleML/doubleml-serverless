@@ -16,15 +16,16 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.config.os }}
+
     strategy:
       matrix:
         config:
-          - {python-version: '3.6', doubleml-version: 'release'}
-          - {python-version: '3.7', doubleml-version: 'release'}
-          - {python-version: '3.8', doubleml-version: 'release'}
-          - {python-version: '3.8', doubleml-version: 'dev'}
-          - {python-version: '3.9', doubleml-version: 'release'}
+          - {os: 'ubuntu-20.04', python-version: '3.6', doubleml-version: 'release'}
+          - {os: 'ubuntu-20.04', python-version: '3.7', doubleml-version: 'release'}
+          - {os: 'ubuntu-latest', python-version: '3.8', doubleml-version: 'release'}
+          - {os: 'ubuntu-latest', python-version: '3.8', doubleml-version: 'dev'}
+          - {os: 'ubuntu-latest', python-version: '3.9', doubleml-version: 'release'}
 
     steps:
     - uses: actions/checkout@v3
