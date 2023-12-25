@@ -14,12 +14,12 @@ class DoubleMLDataS3(DoubleMLData):
                  x_cols=None,
                  z_cols=None,
                  use_other_treat_as_covariate=True):
-        super().__init__(data,
-                         y_col,
-                         d_cols,
-                         x_cols,
-                         z_cols,
-                         use_other_treat_as_covariate)
+        super().__init__(data=data,
+                         y_col=y_col,
+                         d_cols=d_cols,
+                         x_cols=x_cols,
+                         z_cols=z_cols,
+                         use_other_treat_as_covariate=use_other_treat_as_covariate)
         self._bucket = bucket
         self._file_ending = os.path.splitext(file_key)[1]
         assert self._file_ending in ['.csv']
@@ -80,12 +80,12 @@ class DoubleMLDataJson(DoubleMLData):
                  x_cols=None,
                  z_cols=None,
                  use_other_treat_as_covariate=True):
-        super().__init__(data,
-                         y_col,
-                         d_cols,
-                         x_cols,
-                         z_cols,
-                         use_other_treat_as_covariate)
+        super().__init__(data=data,
+                         y_col=y_col,
+                         d_cols=d_cols,
+                         x_cols=x_cols,
+                         z_cols=z_cols,
+                         use_other_treat_as_covariate=use_other_treat_as_covariate)
         self._data_json = data.to_json(orient="columns")
 
     @property
